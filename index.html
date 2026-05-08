@@ -28,6 +28,9 @@ video{
   height:100%;
   object-fit:cover;
   z-index:-2;
+
+  /* HAPUS MIRROR */
+  transform:none;
 }
 
 canvas{
@@ -166,7 +169,7 @@ button{
 
   <div class="title">
     <h1>🤟 AZKA SIGN AI</h1>
-    <p>Future Gesture Recognition System</p>
+    <p>Advanced Gesture Recognition System</p>
   </div>
 
   <div class="card">
@@ -198,7 +201,7 @@ button{
   </div>
 
   <div class="footer">
-    AI Hand Tracking • JavaScript • MediaPipe
+    👍 ✌️ 👋 ✊ ☝️ 🤟 Gesture Detection
   </div>
 
 </div>
@@ -245,7 +248,7 @@ async function startCamera(){
       await navigator.mediaDevices.getUserMedia({
 
         video:{
-          facingMode:"user"
+          facingMode:"environment"
         },
 
         audio:false
@@ -269,7 +272,7 @@ async function startCamera(){
       "Kamera ditolak";
 
     statusText.innerText =
-      "Izinkan akses kamera di browser";
+      "Izinkan akses kamera";
 
     console.error(error);
 
@@ -387,30 +390,39 @@ function startHandTracking(){
 
 }
 
+function fingerUp(tip,pip,landmarks){
+
+  return landmarks[tip].y <
+         landmarks[pip].y;
+
+}
+
 function detectGesture(landmarks){
 
-  const thumbTip =
-    landmarks[4];
+  const thumb =
+    landmarks[4].x <
+    landmarks[3].x;
 
-  const indexTip =
-    landmarks[8];
+  const index =
+    fingerUp(8,6,landmarks);
 
-  const middleTip =
-    landmarks[12];
+  const middle =
+    fingerUp(12,10,landmarks);
 
-  const distanceThumbIndex =
-    Math.hypot(
-      thumbTip.x - indexTip.x,
-      thumbTip.y - indexTip.y
-    );
+  const ring =
+    fingerUp(16,14,landmarks);
 
-  const distanceIndexMiddle =
-    Math.hypot(
-      indexTip.x - middleTip.x,
-      indexTip.y - middleTip.y
-    );
+  const pinky =
+    fingerUp(20,18,landmarks);
 
-  if(distanceThumbIndex < 0.05){
+  // 👍 LIKE
+  if(
+    thumb &&
+    !index &&
+    !middle &&
+    !ring &&
+    !pinky
+  ){
 
     currentGesture = "Baik";
 
@@ -419,12 +431,78 @@ function detectGesture(landmarks){
 
   }
 
-  else if(distanceIndexMiddle > 0.12){
+  // ✌️ PEACE
+  else if(
+    index &&
+    middle &&
+    !ring &&
+    !pinky
+  ){
+
+    currentGesture = "Damai";
+
+    gestureText.innerText =
+      "✌️ DAMAI";
+
+  }
+
+  // ☝️ ONE
+  else if(
+    index &&
+    !middle &&
+    !ring &&
+    !pinky
+  ){
+
+    currentGesture = "Satu";
+
+    gestureText.innerText =
+      "☝️ SATU";
+
+  }
+
+  // 👋 OPEN HAND
+  else if(
+    index &&
+    middle &&
+    ring &&
+    pinky
+  ){
 
     currentGesture = "Halo";
 
     gestureText.innerText =
       "👋 HALO";
+
+  }
+
+  // ✊ FIST
+  else if(
+    !index &&
+    !middle &&
+    !ring &&
+    !pinky
+  ){
+
+    currentGesture = "Stop";
+
+    gestureText.innerText =
+      "✊ STOP";
+
+  }
+
+  // 🤟 LOVE
+  else if(
+    index &&
+    pinky &&
+    !middle &&
+    !ring
+  ){
+
+    currentGesture = "Aku sayang kamu";
+
+    gestureText.innerText =
+      "🤟 LOVE";
 
   }
 
