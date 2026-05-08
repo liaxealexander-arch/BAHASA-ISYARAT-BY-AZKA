@@ -28,9 +28,6 @@ video{
   height:100%;
   object-fit:cover;
   z-index:-2;
-
-  /* HAPUS MIRROR */
-  transform:none;
 }
 
 canvas{
@@ -44,10 +41,11 @@ canvas{
 .overlay{
   position:fixed;
   inset:0;
-  background:linear-gradient(
+  background:
+  linear-gradient(
     to top,
-    rgba(0,0,0,0.7),
-    rgba(0,0,0,0.1)
+    rgba(0,0,0,0.75),
+    rgba(0,0,0,0.15)
   );
 }
 
@@ -63,29 +61,33 @@ canvas{
 }
 
 .title h1{
-  font-size:32px;
+  font-size:34px;
   color:#00e5ff;
   text-shadow:0 0 20px #00e5ff;
 }
 
 .title p{
   margin-top:5px;
-  color:#a8c0dd;
+  color:#a7c1df;
 }
 
 .card{
+
   margin-top:25px;
 
   background:rgba(255,255,255,0.06);
+
   border:1px solid rgba(0,255,255,0.2);
 
   border-radius:22px;
+
   padding:22px;
 
   backdrop-filter:blur(12px);
 
   box-shadow:
   0 0 25px rgba(0,255,255,0.12);
+
 }
 
 .label{
@@ -95,7 +97,7 @@ canvas{
 
 .gesture{
   margin-top:12px;
-  font-size:30px;
+  font-size:34px;
   color:#00ffd5;
   font-weight:bold;
   text-align:center;
@@ -114,18 +116,30 @@ canvas{
 }
 
 button{
+
   flex:1;
-  padding:14px;
+
+  padding:15px;
+
   border:none;
+
   border-radius:15px;
 
   background:#00d9ff;
+
   color:#04111f;
 
   font-weight:bold;
+
   font-size:15px;
 
   cursor:pointer;
+
+  transition:0.3s;
+}
+
+button:hover{
+  transform:scale(1.03);
 }
 
 .footer{
@@ -160,7 +174,13 @@ button{
 
 <body>
 
-<video id="video" autoplay playsinline muted></video>
+<video
+id="video"
+autoplay
+playsinline
+muted>
+</video>
+
 <canvas id="canvas"></canvas>
 
 <div class="overlay"></div>
@@ -178,11 +198,15 @@ button{
       AI Detection Result
     </div>
 
-    <div class="gesture pulse" id="gestureText">
+    <div
+    class="gesture pulse"
+    id="gestureText">
       Menunggu kamera...
     </div>
 
-    <div class="status" id="status">
+    <div
+    class="status"
+    id="status">
       Sistem belum aktif
     </div>
 
@@ -207,7 +231,9 @@ button{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <script>
@@ -238,6 +264,8 @@ let currentGesture =
 
 let cameraStarted = false;
 
+let lastSpoken = "";
+
 async function startCamera(){
 
   if(cameraStarted) return;
@@ -245,7 +273,9 @@ async function startCamera(){
   try{
 
     const stream =
-      await navigator.mediaDevices.getUserMedia({
+      await navigator
+      .mediaDevices
+      .getUserMedia({
 
         video:{
           facingMode:"environment"
@@ -299,13 +329,35 @@ function speakGesture(){
 
 }
 
+function autoSpeak(text){
+
+  if(lastSpoken === text) return;
+
+  lastSpoken = text;
+
+  const speech =
+    new SpeechSynthesisUtterance(text);
+
+  speech.lang = "id-ID";
+
+  speech.rate = 1;
+
+  speech.pitch = 1;
+
+  speech.volume = 1;
+
+  speechSynthesis.speak(speech);
+
+}
+
 function startHandTracking(){
 
   const hands = new Hands({
 
     locateFile:(file)=>{
 
-      return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+      return
+      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
 
     }
 
@@ -390,30 +442,52 @@ function startHandTracking(){
 
 }
 
-function fingerUp(tip,pip,landmarks){
-
-  return landmarks[tip].y <
-         landmarks[pip].y;
-
-}
-
 function detectGesture(landmarks){
 
+  const thumbTip =
+    landmarks[4];
+
+  const thumbIP =
+    landmarks[3];
+
+  const indexTip =
+    landmarks[8];
+
+  const indexPIP =
+    landmarks[6];
+
+  const middleTip =
+    landmarks[12];
+
+  const middlePIP =
+    landmarks[10];
+
+  const ringTip =
+    landmarks[16];
+
+  const ringPIP =
+    landmarks[14];
+
+  const pinkyTip =
+    landmarks[20];
+
+  const pinkyPIP =
+    landmarks[18];
+
   const thumb =
-    landmarks[4].x <
-    landmarks[3].x;
+    thumbTip.x < thumbIP.x;
 
   const index =
-    fingerUp(8,6,landmarks);
+    indexTip.y < indexPIP.y;
 
   const middle =
-    fingerUp(12,10,landmarks);
+    middleTip.y < middlePIP.y;
 
   const ring =
-    fingerUp(16,14,landmarks);
+    ringTip.y < ringPIP.y;
 
   const pinky =
-    fingerUp(20,18,landmarks);
+    pinkyTip.y < pinkyPIP.y;
 
   // 👍 LIKE
   if(
@@ -424,25 +498,13 @@ function detectGesture(landmarks){
     !pinky
   ){
 
-    currentGesture = "Baik";
+    currentGesture =
+      "Baik";
 
     gestureText.innerText =
       "👍 BAIK";
 
-  }
-
-  // ✌️ PEACE
-  else if(
-    index &&
-    middle &&
-    !ring &&
-    !pinky
-  ){
-
-    currentGesture = "Damai";
-
-    gestureText.innerText =
-      "✌️ DAMAI";
+    autoSpeak("Baik");
 
   }
 
@@ -454,40 +516,31 @@ function detectGesture(landmarks){
     !pinky
   ){
 
-    currentGesture = "Satu";
+    currentGesture =
+      "Satu";
 
     gestureText.innerText =
       "☝️ SATU";
 
+    autoSpeak("Satu");
+
   }
 
-  // 👋 OPEN HAND
+  // ✌️ PEACE
   else if(
     index &&
     middle &&
-    ring &&
-    pinky
-  ){
-
-    currentGesture = "Halo";
-
-    gestureText.innerText =
-      "👋 HALO";
-
-  }
-
-  // ✊ FIST
-  else if(
-    !index &&
-    !middle &&
     !ring &&
     !pinky
   ){
 
-    currentGesture = "Stop";
+    currentGesture =
+      "Damai";
 
     gestureText.innerText =
-      "✊ STOP";
+      "✌️ DAMAI";
+
+    autoSpeak("Damai");
 
   }
 
@@ -499,10 +552,50 @@ function detectGesture(landmarks){
     !ring
   ){
 
-    currentGesture = "Aku sayang kamu";
+    currentGesture =
+      "Aku sayang kamu";
 
     gestureText.innerText =
       "🤟 LOVE";
+
+    autoSpeak("Aku sayang kamu");
+
+  }
+
+  // ✊ FIST
+  else if(
+    !index &&
+    !middle &&
+    !ring &&
+    !pinky
+  ){
+
+    currentGesture =
+      "Stop";
+
+    gestureText.innerText =
+      "✊ STOP";
+
+    autoSpeak("Stop");
+
+  }
+
+  // 👋 OPEN HAND
+  else if(
+    thumb &&
+    index &&
+    middle &&
+    ring &&
+    pinky
+  ){
+
+    currentGesture =
+      "Halo";
+
+    gestureText.innerText =
+      "👋 HALO";
+
+    autoSpeak("Halo");
 
   }
 
