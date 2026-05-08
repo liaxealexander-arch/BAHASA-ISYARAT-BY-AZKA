@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>AZKA SIGN AI</title>
+<title>AZKA SIGN AI PRO</title>
 
 <style>
 
@@ -12,12 +12,12 @@
   margin:0;
   padding:0;
   box-sizing:border-box;
-  font-family:Arial, sans-serif;
+  font-family:Arial,sans-serif;
 }
 
 body{
-  background:#050816;
   overflow:hidden;
+  background:#050816;
   color:white;
 }
 
@@ -68,7 +68,7 @@ canvas{
 
 .title p{
   margin-top:5px;
-  color:#a7c1df;
+  color:#9bb6d8;
 }
 
 .card{
@@ -96,11 +96,11 @@ canvas{
 }
 
 .gesture{
-  margin-top:12px;
-  font-size:34px;
+  margin-top:14px;
+  text-align:center;
+  font-size:36px;
   color:#00ffd5;
   font-weight:bold;
-  text-align:center;
 }
 
 .status{
@@ -109,21 +109,15 @@ canvas{
   color:#d4e7ff;
 }
 
-.buttons{
+.button{
+  width:100%;
   margin-top:20px;
-  display:flex;
-  gap:12px;
-}
-
-button{
-
-  flex:1;
 
   padding:15px;
 
   border:none;
 
-  border-radius:15px;
+  border-radius:16px;
 
   background:#00d9ff;
 
@@ -131,21 +125,15 @@ button{
 
   font-weight:bold;
 
-  font-size:15px;
+  font-size:16px;
 
   cursor:pointer;
-
-  transition:0.3s;
-}
-
-button:hover{
-  transform:scale(1.03);
 }
 
 .footer{
   text-align:center;
-  margin-top:25px;
-  color:#7890aa;
+  margin-top:24px;
+  color:#748ba6;
   font-size:13px;
 }
 
@@ -188,8 +176,8 @@ muted>
 <div class="ui">
 
   <div class="title">
-    <h1>🤟 AZKA SIGN AI</h1>
-    <p>Advanced Gesture Recognition System</p>
+    <h1>🤟 AZKA SIGN AI PRO</h1>
+    <p>Realtime Gesture Voice System</p>
   </div>
 
   <div class="card">
@@ -210,22 +198,16 @@ muted>
       Sistem belum aktif
     </div>
 
-    <div class="buttons">
-
-      <button onclick="startCamera()">
-        📷 START
-      </button>
-
-      <button onclick="speakGesture()">
-        🔊 SPEAK
-      </button>
-
-    </div>
+    <button
+    class="button"
+    onclick="startCamera()">
+      📷 START AI
+    </button>
 
   </div>
 
   <div class="footer">
-    👍 ✌️ 👋 ✊ ☝️ 🤟 Gesture Detection
+    👍 ✌️ 👋 ✊ ☝️ 🤟 🖐️ ✋ 🫶 Detection
   </div>
 
 </div>
@@ -259,12 +241,16 @@ canvas.width =
 canvas.height =
   window.innerHeight;
 
+let cameraStarted = false;
+
 let currentGesture =
   "Tidak ada gesture";
 
-let cameraStarted = false;
+let lastSpoken =
+  "";
 
-let lastSpoken = "";
+let lastSpeakTime =
+  0;
 
 async function startCamera(){
 
@@ -294,7 +280,7 @@ async function startCamera(){
 
     cameraStarted = true;
 
-    startHandTracking();
+    startTracking();
 
   }catch(error){
 
@@ -310,30 +296,20 @@ async function startCamera(){
 
 }
 
-function speakGesture(){
+function speak(text){
 
-  const speech =
-    new SpeechSynthesisUtterance(
-      currentGesture
-    );
+  const now = Date.now();
 
-  speech.lang = "id-ID";
-
-  speech.rate = 1;
-
-  speech.pitch = 1;
-
-  speech.volume = 1;
-
-  speechSynthesis.speak(speech);
-
-}
-
-function autoSpeak(text){
-
-  if(lastSpoken === text) return;
+  if(
+    lastSpoken === text &&
+    now - lastSpeakTime < 2500
+  ) return;
 
   lastSpoken = text;
+
+  lastSpeakTime = now;
+
+  speechSynthesis.cancel();
 
   const speech =
     new SpeechSynthesisUtterance(text);
@@ -350,7 +326,7 @@ function autoSpeak(text){
 
 }
 
-function startHandTracking(){
+function startTracking(){
 
   const hands = new Hands({
 
@@ -442,52 +418,30 @@ function startHandTracking(){
 
 }
 
+function up(tip,pip,landmarks){
+
+  return landmarks[tip].y <
+         landmarks[pip].y;
+
+}
+
 function detectGesture(landmarks){
 
-  const thumbTip =
-    landmarks[4];
-
-  const thumbIP =
-    landmarks[3];
-
-  const indexTip =
-    landmarks[8];
-
-  const indexPIP =
-    landmarks[6];
-
-  const middleTip =
-    landmarks[12];
-
-  const middlePIP =
-    landmarks[10];
-
-  const ringTip =
-    landmarks[16];
-
-  const ringPIP =
-    landmarks[14];
-
-  const pinkyTip =
-    landmarks[20];
-
-  const pinkyPIP =
-    landmarks[18];
-
   const thumb =
-    thumbTip.x < thumbIP.x;
+    landmarks[4].x <
+    landmarks[3].x;
 
   const index =
-    indexTip.y < indexPIP.y;
+    up(8,6,landmarks);
 
   const middle =
-    middleTip.y < middlePIP.y;
+    up(12,10,landmarks);
 
   const ring =
-    ringTip.y < ringPIP.y;
+    up(16,14,landmarks);
 
   const pinky =
-    pinkyTip.y < pinkyPIP.y;
+    up(20,18,landmarks);
 
   // 👍 LIKE
   if(
@@ -504,7 +458,7 @@ function detectGesture(landmarks){
     gestureText.innerText =
       "👍 BAIK";
 
-    autoSpeak("Baik");
+    speak("Baik");
 
   }
 
@@ -522,7 +476,7 @@ function detectGesture(landmarks){
     gestureText.innerText =
       "☝️ SATU";
 
-    autoSpeak("Satu");
+    speak("Satu");
 
   }
 
@@ -540,43 +494,7 @@ function detectGesture(landmarks){
     gestureText.innerText =
       "✌️ DAMAI";
 
-    autoSpeak("Damai");
-
-  }
-
-  // 🤟 LOVE
-  else if(
-    index &&
-    pinky &&
-    !middle &&
-    !ring
-  ){
-
-    currentGesture =
-      "Aku sayang kamu";
-
-    gestureText.innerText =
-      "🤟 LOVE";
-
-    autoSpeak("Aku sayang kamu");
-
-  }
-
-  // ✊ FIST
-  else if(
-    !index &&
-    !middle &&
-    !ring &&
-    !pinky
-  ){
-
-    currentGesture =
-      "Stop";
-
-    gestureText.innerText =
-      "✊ STOP";
-
-    autoSpeak("Stop");
+    speak("Damai");
 
   }
 
@@ -595,7 +513,100 @@ function detectGesture(landmarks){
     gestureText.innerText =
       "👋 HALO";
 
-    autoSpeak("Halo");
+    speak("Halo");
+
+  }
+
+  // ✊ FIST
+  else if(
+    !index &&
+    !middle &&
+    !ring &&
+    !pinky
+  ){
+
+    currentGesture =
+      "Stop";
+
+    gestureText.innerText =
+      "✊ STOP";
+
+    speak("Stop");
+
+  }
+
+  // 🤟 LOVE
+  else if(
+    index &&
+    pinky &&
+    !middle &&
+    !ring
+  ){
+
+    currentGesture =
+      "Aku sayang kamu";
+
+    gestureText.innerText =
+      "🤟 LOVE";
+
+    speak("Aku sayang kamu");
+
+  }
+
+  // 🖐️ FIVE
+  else if(
+    index &&
+    middle &&
+    ring &&
+    pinky &&
+    !thumb
+  ){
+
+    currentGesture =
+      "Lima";
+
+    gestureText.innerText =
+      "🖐️ LIMA";
+
+    speak("Lima");
+
+  }
+
+  // ✋ WAIT
+  else if(
+    thumb &&
+    !index &&
+    middle &&
+    ring &&
+    pinky
+  ){
+
+    currentGesture =
+      "Tunggu";
+
+    gestureText.innerText =
+      "✋ TUNGGU";
+
+    speak("Tunggu");
+
+  }
+
+  // 🫶 HEART
+  else if(
+    thumb &&
+    index &&
+    !middle &&
+    !ring &&
+    pinky
+  ){
+
+    currentGesture =
+      "Hati";
+
+    gestureText.innerText =
+      "🫶 HATI";
+
+    speak("Hati");
 
   }
 
