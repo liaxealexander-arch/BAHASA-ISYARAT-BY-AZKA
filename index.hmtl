@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>AZKA SIGN AI</title>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial, sans-serif;
+}
+
+body{
+  background:#050816;
+  overflow:hidden;
+  color:white;
+}
+
+video{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:-2;
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:-1;
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  background:linear-gradient(
+    to top,
+    rgba(0,0,0,0.7),
+    rgba(0,0,0,0.1)
+  );
+}
+
+.ui{
+  position:relative;
+  z-index:10;
+  padding:20px;
+}
+
+.title{
+  text-align:center;
+  margin-top:10px;
+}
+
+.title h1{
+  font-size:32px;
+  color:#00e5ff;
+  text-shadow:0 0 20px #00e5ff;
+}
+
+.title p{
+  margin-top:5px;
+  color:#a8c0dd;
+}
+
+.card{
+  margin-top:25px;
+
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(0,255,255,0.2);
+
+  border-radius:22px;
+  padding:22px;
+
+  backdrop-filter:blur(12px);
+
+  box-shadow:
+  0 0 25px rgba(0,255,255,0.12);
+}
+
+.label{
+  color:#8db0d1;
+  font-size:14px;
+}
+
+.gesture{
+  margin-top:12px;
+  font-size:30px;
+  color:#00ffd5;
+  font-weight:bold;
+  text-align:center;
+}
+
+.status{
+  margin-top:12px;
+  text-align:center;
+  color:#d4e7ff;
+}
+
+.buttons{
+  margin-top:20px;
+  display:flex;
+  gap:12px;
+}
+
+button{
+  flex:1;
+  padding:14px;
+  border:none;
+  border-radius:15px;
+
+  background:#00d9ff;
+  color:#04111f;
+
+  font-weight:bold;
+  font-size:15px;
+
+  cursor:pointer;
+}
+
+.footer{
+  text-align:center;
+  margin-top:25px;
+  color:#7890aa;
+  font-size:13px;
+}
+
+.pulse{
+  animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+
+  0%{
+    opacity:1;
+  }
+
+  50%{
+    opacity:0.5;
+  }
+
+  100%{
+    opacity:1;
+  }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
+<div class="overlay"></div>
+
+<div class="ui">
+
+  <div class="title">
+    <h1>🤟 AZKA SIGN AI</h1>
+    <p>Future Gesture Recognition System</p>
+  </div>
+
+  <div class="card">
+
+    <div class="label">
+      AI Detection Result
+    </div>
+
+    <div class="gesture pulse" id="gestureText">
+      Menunggu kamera...
+    </div>
+
+    <div class="status" id="status">
+      Sistem belum aktif
+    </div>
+
+    <div class="buttons">
+
+      <button onclick="startCamera()">
+        📷 START
+      </button>
+
+      <button onclick="speakGesture()">
+        🔊 SPEAK
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="footer">
+    AI Hand Tracking • JavaScript • MediaPipe
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<script>
+
+const video =
+  document.getElementById("video");
+
+const canvas =
+  document.getElementById("canvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+const gestureText =
+  document.getElementById("gestureText");
+
+const statusText =
+  document.getElementById("status");
+
+canvas.width =
+  window.innerWidth;
+
+canvas.height =
+  window.innerHeight;
+
+let currentGesture =
+  "Tidak ada gesture";
+
+let cameraStarted = false;
+
+async function startCamera(){
+
+  if(cameraStarted) return;
+
+  try{
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video:{
+          facingMode:"user"
+        },
+
+        audio:false
+
+      });
+
+    video.srcObject = stream;
+
+    await video.play();
+
+    statusText.innerText =
+      "Kamera aktif • AI berjalan ⚡";
+
+    cameraStarted = true;
+
+    startHandTracking();
+
+  }catch(error){
+
+    gestureText.innerText =
+      "Kamera ditolak";
+
+    statusText.innerText =
+      "Izinkan akses kamera di browser";
+
+    console.error(error);
+
+  }
+
+}
+
+function speakGesture(){
+
+  const speech =
+    new SpeechSynthesisUtterance(
+      currentGesture
+    );
+
+  speech.lang = "id-ID";
+
+  speech.rate = 1;
+
+  speech.pitch = 1;
+
+  speech.volume = 1;
+
+  speechSynthesis.speak(speech);
+
+}
+
+function startHandTracking(){
+
+  const hands = new Hands({
+
+    locateFile:(file)=>{
+
+      return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+
+    }
+
+  });
+
+  hands.setOptions({
+
+    maxNumHands:1,
+
+    modelComplexity:1,
+
+    minDetectionConfidence:0.7,
+
+    minTrackingConfidence:0.7
+
+  });
+
+  hands.onResults(results=>{
+
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    if(results.multiHandLandmarks){
+
+      for(const landmarks of results.multiHandLandmarks){
+
+        drawConnectors(
+          ctx,
+          landmarks,
+          HAND_CONNECTIONS,
+          {
+            color:"#00ffff",
+            lineWidth:4
+          }
+        );
+
+        drawLandmarks(
+          ctx,
+          landmarks,
+          {
+            color:"#00ff99",
+            lineWidth:2
+          }
+        );
+
+        detectGesture(landmarks);
+
+      }
+
+    }else{
+
+      currentGesture =
+        "Tidak ada tangan";
+
+      gestureText.innerText =
+        "❌ TIDAK ADA TANGAN";
+
+    }
+
+  });
+
+  const camera = new Camera(video,{
+
+    onFrame:async()=>{
+
+      await hands.send({
+        image:video
+      });
+
+    },
+
+    width:1280,
+    height:720
+
+  });
+
+  camera.start();
+
+}
+
+function detectGesture(landmarks){
+
+  const thumbTip =
+    landmarks[4];
+
+  const indexTip =
+    landmarks[8];
+
+  const middleTip =
+    landmarks[12];
+
+  const distanceThumbIndex =
+    Math.hypot(
+      thumbTip.x - indexTip.x,
+      thumbTip.y - indexTip.y
+    );
+
+  const distanceIndexMiddle =
+    Math.hypot(
+      indexTip.x - middleTip.x,
+      indexTip.y - middleTip.y
+    );
+
+  if(distanceThumbIndex < 0.05){
+
+    currentGesture = "Baik";
+
+    gestureText.innerText =
+      "👍 BAIK";
+
+  }
+
+  else if(distanceIndexMiddle > 0.12){
+
+    currentGesture = "Halo";
+
+    gestureText.innerText =
+      "👋 HALO";
+
+  }
+
+  else{
+
+    currentGesture =
+      "Gesture tidak dikenali";
+
+    gestureText.innerText =
+      "🤖 TIDAK DIKENALI";
+
+  }
+
+}
+
+</script>
+
+</body>
+</html>
